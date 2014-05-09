@@ -32,14 +32,18 @@ default['nagios']['monitoring_interface'] = nil
 case node['platform_family']
 when 'debian'
   default['nagios']['plugin_dir'] = '/usr/lib/nagios/plugins'
+  default['nagios']['cgi-bin_dir'] = '/usr/lib/nagios/cgi-bin'
 when 'rhel', 'fedora'
   if node['kernel']['machine'] == 'i686'
     default['nagios']['plugin_dir'] = '/usr/lib/nagios/plugins'
+    default['nagios']['cgi-bin_dir'] = '/usr/lib/nagios/cgi-bin'
   else
     default['nagios']['plugin_dir'] = '/usr/lib64/nagios/plugins'
+    default['nagios']['cgi-bin_dir'] = '/usr/lib64/nagios/cgi-bin'
   end
 else
   default['nagios']['plugin_dir'] = '/usr/lib/nagios/plugins'
+  default['nagios']['cgi-bin_dir'] = '/usr/lib/nagios/cgi-bin'
 end
 
 # directories

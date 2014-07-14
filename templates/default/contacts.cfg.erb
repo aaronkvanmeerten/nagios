@@ -26,6 +26,7 @@ define contactgroup {
   members           <%= @members.join(',') %>
 }
 
+<% pager_contacts = [] %>
 <% @admins.each do |a| -%>
 <% # don't template out contacts that don't have the nagios hash or a nagios e-mail defined %>
 <% unless a['nagios'].nil? || a['nagios']['email'].nil?  -%>
@@ -34,6 +35,17 @@ define contact {
   contact_name <%= a['id'] %>
   email        <%= a['nagios']['email'] %>
 }
+<% end -%>
+
+
+<% # don't template out contacts that don't have the nagios hash or a nagios pager defined %>
+<% unless a['nagios'].nil? || a['nagios']['email'].nil?  -%>
+define contact {
+  use          default-contact
+  contact_name <%= a['id'] %>-pager
+  email        <%= a['nagios']['pager'] %>
+}
+<% pager_contacts << "#{a['id']}-pager" %>
 <% end -%>
 
 <% end -%>
@@ -50,6 +62,13 @@ define contact {
   <% end %>
 }
 <% end -%>
+
+define contactgroup {
+  contactgroup_name admins-pagers
+  alias             Sysadmin Pagers
+  members           <%= pager_contacts.join(',') %>
+}
+
 
 # Contact Groups from data bags
 <% @contactgroups.each do |contactgroup| -%>
@@ -70,7 +89,7 @@ define serviceescalation {
   <% unless serviceescalation['register'] %>
   register 0
   <% end %>
-  <% %w{use contacts contact_groups first_notification last_notification escalation_period escalation_options notification_interval host_name hostgroup_name service_description}.each do |conf| %>
+  <% %w{use servicegroup_name contacts contact_groups first_notification last_notification escalation_period escalation_options notification_interval host_name hostgroup_name service_description}.each do |conf| %>
   <% unless serviceescalation[conf].nil? %>
   <%= conf %> <%= serviceescalation[conf] %>
   <% end %>

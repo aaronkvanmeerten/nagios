@@ -113,8 +113,8 @@ end
 
 # for server from source installation
 default['nagios']['server']['url']      = 'http://prdownloads.sourceforge.net/sourceforge/nagios'
-default['nagios']['server']['version']  = '3.5.1'
-default['nagios']['server']['checksum'] = 'ca9dd68234fa090b3c35ecc8767b2c9eb743977eaf32612fa9b8341cc00a0f99'
+default['nagios']['server']['version']  = '4.0.7'
+default['nagios']['server']['checksum'] = 'ef1de1d106f6572a88547f3ed37a744c5d4fa778859ce44fc9043da597c50799'
 default['nagios']['server']['src_dir'] = 'nagios'
 
 # for server from packages installation

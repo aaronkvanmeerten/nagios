@@ -25,11 +25,13 @@ define :nagios_conf, :variables => {}, :config_subdir => true, :source => nil do
 
   conf_dir = params[:config_subdir] ? node['nagios']['config_dir'] : node['nagios']['conf_dir']
   params[:source] ||= "#{params[:name]}.cfg.erb"
+  params[:cookbook] ||= "nagios"
 
   template "#{conf_dir}/#{params[:name]}.cfg" do
     owner node['nagios']['user']
     group node['nagios']['group']
     source params[:source]
+    cookbook params[:cookbook]
     mode 00644
     variables params[:variables]
     notifies :reload, 'service[nagios]'

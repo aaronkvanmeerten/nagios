@@ -1,10 +1,10 @@
 #
-# Author:: Seth Chisamore <schisamo@opscode.com>
+# Author:: Seth Chisamore <schisamo@getchef.com>
 # Author:: Tim Smith <tsmith@limelight.com>
 # Cookbook Name:: nagios
 # Attributes:: default
 #
-# Copyright 2011-2013, Opscode, Inc
+# Copyright 2011-2013, Chef Software, Inc.
 # Copyright 2013-2014, Limelight Networks, Inc
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@
 
 # Allow a Nagios server to monitor hosts in multiple environments.
 default['nagios']['multi_environment_monitoring'] = false
+default['nagios']['monitored_environments'] = []
 
 default['nagios']['user']  = 'nagios'
 default['nagios']['group'] = 'nagios'
@@ -51,6 +52,7 @@ case node['platform_family']
 when 'rhel', 'fedora'
   default['nagios']['home']          = '/var/spool/nagios'
   default['nagios']['conf_dir']      = '/etc/nagios'
+  default['nagios']['resource_dir']  = '/etc/nagios'
   default['nagios']['config_dir']    = '/etc/nagios/conf.d'
   default['nagios']['log_dir']       = '/var/log/nagios'
   default['nagios']['cache_dir']     = '/var/log/nagios'
@@ -60,6 +62,7 @@ when 'rhel', 'fedora'
 else
   default['nagios']['home']          = '/usr/lib/nagios3'
   default['nagios']['conf_dir']      = '/etc/nagios3'
+  default['nagios']['resource_dir']  = '/etc/nagios3'
   default['nagios']['config_dir']    = '/etc/nagios3/conf.d'
   default['nagios']['log_dir']       = '/var/log/nagios3'
   default['nagios']['cache_dir']     = '/var/cache/nagios3'
@@ -146,6 +149,7 @@ default['nagios']['users_databag_group']         = 'sysadmin'
 default['nagios']['services_databag']            = 'nagios_services'
 default['nagios']['servicegroups_databag']       = 'nagios_servicegroups'
 default['nagios']['templates_databag']           = 'nagios_templates'
+default['nagios']['hosttemplates_databag']       = 'nagios_hosttemplates'
 default['nagios']['eventhandlers_databag']       = 'nagios_eventhandlers'
 default['nagios']['unmanagedhosts_databag']      = 'nagios_unmanagedhosts'
 default['nagios']['serviceescalations_databag']  = 'nagios_serviceescalations'
@@ -157,6 +161,7 @@ default['nagios']['timeperiods_databag']         = 'nagios_timeperiods'
 default['nagios']['host_name_attribute']         = 'hostname'
 default['nagios']['regexp_matching']             = 0
 default['nagios']['large_installation_tweaks']   = 0
+default['nagios']['host_template'] = 'server'
 
 # for cas authentication
 default['nagios']['cas_login_url']       = 'https://example.com/cas/login'
@@ -170,9 +175,10 @@ default['nagios']['ldap_bind_password'] = nil
 default['nagios']['ldap_url']           = nil
 default['nagios']['ldap_authoritative'] = nil
 
+default['nagios']['templates']       = Mash.new
+
 # This setting is effectively sets the minimum interval (in seconds) nagios can handle.
 # Other interval settings provided in seconds will calculate their actual from this value, since nagios works in 'time units' rather than allowing definitions everywhere in seconds
-default['nagios']['templates']       = Mash.new
 default['nagios']['interval_length'] = 1
 
 default['nagios']['default_host']['flap_detection']        = true
@@ -226,9 +232,6 @@ default['nagios']['cgi']['lock_author_names']                        = 1
 node.set['nagios']['pagerduty']['key'] = node['nagios']['pagerduty_key']
 
 default['nagios']['pagerduty']['key'] = ''
-unless node['nagios']['pagerduty']['key'].empty?
-  default['nagios']['additional_contacts'] = { 'pagerduty' => true }
-end
 default['nagios']['pagerduty']['script_url'] = 'https://raw.github.com/PagerDuty/pagerduty-nagios-pl/master/pagerduty_nagios.pl'
 default['nagios']['pagerduty']['service_notification_options'] = 'w,u,c,r'
 default['nagios']['pagerduty']['host_notification_options'] = 'd,r'

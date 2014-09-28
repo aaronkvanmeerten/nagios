@@ -1,13 +1,13 @@
 #
 # Author:: Joshua Sierles <joshua@37signals.com>
-# Author:: Joshua Timberman <joshua@opscode.com>
-# Author:: Nathan Haneysmith <nathan@opscode.com>
-# Author:: Seth Chisamore <schisamo@opscode.com>
+# Author:: Joshua Timberman <joshua@getchef.com>
+# Author:: Nathan Haneysmith <nathan@getchef.com>
+# Author:: Seth Chisamore <schisamo@getchef.com>
 # Cookbook Name:: nagios
 # Definition:: nagios_conf
 #
 # Copyright 2009, 37signals
-# Copyright 2009-2013, Opscode, Inc
+# Copyright 2009-2013, Chef Software, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ define :nagios_conf, :variables => {}, :config_subdir => true, :source => nil do
     group node['nagios']['group']
     source params[:source]
     cookbook params[:cookbook]
-    mode 00644
+    mode '0644'
     variables params[:variables]
     notifies :reload, 'service[nagios]'
     backup 0

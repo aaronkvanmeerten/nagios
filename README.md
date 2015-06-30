@@ -1,6 +1,8 @@
 nagios cookbook
 ===============
-[![Build Status](https://secure.travis-ci.org/tas50/nagios.png?branch=master)](http://travis-ci.org/tas50/nagios)
+
+[![Join the chat at https://gitter.im/schubergphilis/nagios](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/schubergphilis/nagios?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/schubergphilis/nagios.svg)](https://travis-ci.org/schubergphilis/nagios)
 
 Installs and configures Nagios server. Chef nodes are automatically discovered using search, and Nagios host groups are created based on Chef roles and optionally environments as well.
 
@@ -16,7 +18,7 @@ This cookbook relies heavily on multiple data bags. See __Data Bag__ below.
 
 The system running this cookbooks should have a role named 'monitoring' so that NRPE clients can authorize monitoring from that system. This role name is configurable via an attribute. See __Attributes__ below.
 
-The functionality that was previously in the nagios::client recipe has been moved to its own NRPE cookbook at https://github.com/tas50/chef-nrpe
+The functionality that was previously in the nagios::client recipe has been moved to its own NRPE cookbook at https://github.com/schubergphilis/nrpe
 
 ### Platform
 * Debian 6.X, 7.X
@@ -26,7 +28,7 @@ The functionality that was previously in the nagios::client recipe has been move
 **Notes**: This cookbook has been tested on the listed platforms. It may work on other platforms with or without modification.
 
 ### Cookbooks
-* apache2
+* apache2 2.0 or greater
 * build-essential
 * nginx
 * nginx_simplecgi
@@ -36,6 +38,10 @@ The functionality that was previously in the nagios::client recipe has been move
 
 Attributes
 ----------
+### config
+[The config file](https://github.com/schubergphilis/nagios/blob/master/attributes/config.rb) contains the Nagios configuration options. Consult the [nagios documentation](http://nagios.sourceforge.net/docs/3_0/configmain.html) for available settings and allowed options. Configuration entries of which multiple entries are allowed, need to be specified as an Array.
+
+Example: `default['nagios']['conf']['cfg_dir'] = [ '/etc/nagios/conf.d' , '/usr/local/nagios/conf.d' ]`
 
 ### default
 * `node['nagios']['user']` - Nagios user, default 'nagios'.
@@ -44,8 +50,10 @@ Attributes
 * `node['nagios']['multi_environment_monitoring']` - Chef server will monitor hosts in all environments, not just its own, default 'false'
 * `node['nagios']['monitored_environments']` - If multi_environment_monitoring is 'true' nagios will monitor nodes in all environments. If monitored_environments is defined then nagios will monitor only hosts in the list of environments defined. For ex: ['prod', 'beta'] will monitor only hosts in 'prod' and 'beta' chef_environments. Defaults to '[]' - and all chef environments will be monitored by default.
 * `node['nagios']['monitoring_interface']` - If set, will use the specified interface for all nagios monitoring network traffic. Defaults to `nil`
+* `node['nagios']['exclude_tag_host']` - If set, hosts tagged with this value will be excluded from nagios monitoring.  Defaults to ''
 
 * `node['nagios']['server']['install_method']` - whether to install from package or source. Default chosen by platform based on known packages available for Nagios: debian/ubuntu 'package', redhat/centos/fedora/scientific: source
+* `node['nagios']['server']['install_yum-epel']` - whether to install the EPEL repo or not (only applies to RHEL platform family). The default value is `true`. Set this to `false` if you do not wish to install the EPEL RPM; in this scenario you will need to make the relevant packages available via another method e.g. local repo, or install from source.
 * `node['nagios']['server']['service_name']` - name of the service used for Nagios, default chosen by platform, debian/ubuntu "nagios3", redhat family "nagios", all others, "nagios"
 * `node['nagios']['home']` - Nagios main home directory, default "/usr/lib/nagios3"
 * `node['nagios']['conf_dir']` - location where main Nagios config lives, default "/etc/nagios3"
@@ -63,14 +71,17 @@ Attributes
 * `node['nagios']['ssl_cert_key']`  = Location of SSL Certificate Key. default "/etc/nagios3/certificates/nagios-server.pem"
 * `node['nagios']['http_port']` - port that the Apache/Nginx virtual site should listen on, determined whether ssl is enabled (443 if so, otherwise 80). Note:  You will also need to configure the listening port for either NGINX or Apache within those cookbooks.
 * `node['nagios']['server_name']` - common name to use in a server cert, default "nagios"
+* `node['nagios']['server']['server_alias']` - alias name for the webserver for use with Apache.  Defaults to nil
 * `node['nagios']['ssl_req']` - info to use in a cert, default `/C=US/ST=Several/L=Locality/O=Example/OU=Operations/CN=#{node['nagios']['server_name']}/emailAddress=ops@#{node['nagios']['server_name']}`
 
 *  `node['nagios']['server']['url']` - url to download the server source from if installing from source
 *  `node['nagios']['server']['version']` - version of the server source to download
 *  `node['nagios']['server']['checksum']` - checksum of the source files
+*  `node['nagios']['server']['patch_url']` - url to download patches from if installing from source
+*  `node['nagios']['server']['patches']` - array of patch filenames to apply if installing from source
 *  `node['nagios']['url']` - URL to host Nagios from - defaults to nil and instead uses  FQDN
 
-* `node['nagios']['notifications_enabled']` - set to 1 to enable notification.
+* `node['nagios']['conf']['enable_notifications']` - set to 1 to enable notification.
 * `node['nagios']['check_external_commands']`
 * `node['nagios']['default_contact_groups']`
 * `node['nagios']['sysadmin_email']` - default notification email.
@@ -107,6 +118,7 @@ Attributes
 
 
 * `node['nagios']['default_host']['flap_detection']` - Defaults to `true`.
+* `node['nagios']['default_host']['process_perf_data']` - Defaults to `false`.
 * `node['nagios']['default_host']['check_period']` - Defaults to `'24x7'`.
 * `node['nagios']['default_host']['check_interval']` - In seconds. Must be divisible by `node['nagios']['interval_length']`. Defaults to `15`.
 * `node['nagios']['default_host']['retry_interval']` - In seconds. Must be divisible by `node['nagios']['interval_length']`. Defaults to `15`.
@@ -114,25 +126,16 @@ Attributes
 * `node['nagios']['default_host']['check_command']` - Defaults to the pre-defined command `'check-host-alive'`.
 * `node['nagios']['default_host']['notification_interval']` - In seconds. Must be divisible by `node['nagios']['interval_length']`. Defaults to `300`.
 * `node['nagios']['default_host']['notification_options']` - Defaults to `'d,u,r'`.
+* `node['nagios']['default_host']['action_url']` - Defines a action url.  Defaults to `nil`.
+
+* `node['nagios']['default_service']['process_perf_data']` - Defaults to `false`.
+* `node['nagios']['default_service']['action_url']` - Defines a action url. Defaults to `nil`.
 
 * `node['nagios']['server']['web_server']` - web server to use. supports Apache or Nginx, default "apache"
 * `node['nagios']['server']['nginx_dispatch']` - nginx dispatch method. supports cgi or php, default "cgi"
 * `node['nagios']['server']['stop_apache']` - stop apache service if using nginx, default false
 * `node['nagios']['server']['redirect_root']` - if using Apache, should http://server/ redirect to http://server/nagios3 automatically, default false
 * `node['nagios']['server']['normalize_hostname']` - If set to true, normalize all hostnames in hosts.cfg to lowercase. Defaults to false.
-
-These are additional nagios.cfg options.
-
- * `node['nagios']['conf']['max_service_check_spread']`  - Defaults to 5
- * `node['nagios']['conf']['max_host_check_spread']`     - Defaults to 5
- * `node['nagios']['conf']['service_check_timeout']`     - Defaults to 60
- * `node['nagios']['conf']['host_check_timeout']`        - Defaults to 30
- * `node['nagios']['conf']['process_performance_data']`  - Defaults to 0
- * `node['nagios']['conf']['date_format']`               - Defaults to 'iso8601'
- * `node['nagios']['conf']['p1_file']`                   - Defaults to `#{node['nagios']['home']}/p1.pl`
- * `node['nagios']['conf']['debug_level']`               - Defaults to 0
- * `node['nagios']['conf']['debug_verbosity']`           - Defaults to 1
- * `node['nagios']['conf']['debug_file']`                - Defaults to `#{node['nagios']['state_dir']}/#{node['nagios']['server']['name']}.debug`
 
  These are nagios cgi.config options.
 
@@ -189,316 +192,7 @@ This recipe was written based on the [Nagios Integration Guide](http://www.pager
 
 Data Bags
 ---------
-### Users
-Create a `users` data bag that will contain the users that will be able to log into the Nagios webui. Each user can use htauth with a specified password, or an openid. Users that should be able to log in should be in the sysadmin group. Example user data bag item:
-
-```javascript
-{
-  "id": "nagiosadmin",
-  "groups": "sysadmin",
-  "htpasswd": "hashed_htpassword",
-  "openid": "http://nagiosadmin.myopenid.com/",
-  "nagios": {
-    "pager": "nagiosadmin_pager@example.com",
-    "email": "nagiosadmin@example.com"
-  }
-}
-```
-
-When using `server_auth_method` 'openid' (default), use the openid in the data bag item. Any other value for this attribute (e.g., "htauth", "htpasswd", etc) will use the htpasswd value as the password in `/etc/nagios3/htpasswd.users`.
-
-The openid must have the http:// and trailing /. The htpasswd must be the hashed value. Get this value with htpasswd:
-
-    % htpasswd -n -s nagiosadmin
-    New password:
-    Re-type new password:
-    nagiosadmin:{SHA}oCagzV4lMZyS7jl2Z0WlmLxEkt4=
-
-For example use the `{SHA}oCagzV4lMZyS7jl2Z0WlmLxEkt4=` value in the data bag.
-
-### Contacts and Contact Groups
-To send alerting notification to contacts that aren't authorized to login to Nagios via the 'users' data bag create `nagios_contacts` and `nagios_contactgroups` data bags.
-
-Example `nagios_contacts` data bag item
-
-```javascript
-{
-  "id": "devs",
-  "alias": "Developers",
-  "use": "default-contact",
-  "email": "devs@company.com",
-  "pager": "page_the_devs@company.com"
-}
-```
-
-Example `nagios_contactgroup` data bag item
-
-```javascript
-{
-  "id": "non_admins",
-  "alias": "Non-Administrator Contacts",
-  "members": "devs,helpdesk,managers"
-}
-```
-
-### Services
-To add service checks to Nagios create a `nagios_services` data bag containing definitions for services to be monitored. This allows you to add monitoring rules without directly editing the services and commands templates in the cookbook. Each service will be named based on the id of the data bag item and the command will be named using the same id prepended with "check\_". Just make sure the id in your data bag doesn't conflict with a service or command already defined in the templates.
-
-Here's an example of a service check for sshd that you could apply to all hostgroups:
-
-```javascript
-{
-  "id": "ssh",
-  "hostgroup_name": "linux",
-  "command_line": "$USER1$/check_ssh $HOSTADDRESS$"
-}
-```
-
-You may optionally define the service template for your service by including `service_template` and a valid template name. 
-
-Example:
-```javascript
-"service_template": "special_service_template".
-```
-You may also optionally add a service description that will be displayed in the Nagios UI using "description": "My Service Name". If this is not present the databag item ID will be used as the description. You use defined escalations for the service with 'use\_escalation'. See ___Service_Escalations__ for more information.
-
-You may also use an already defined command definition by omitting the command\_line parameter and using use\_existing\_command parameter instead:
-
-```javascript
-{
-  "id": "pingme",
-  "hostgroup_name": "all",
-  "use_existing_command": "check-host-alive"
-}
-```
-
-You may also specify that a check only be run if the nagios server is in a specific environment. This is useful if you have nagios servers in several environments but you would like a service check to only apply in one particular environment:
-
-```javascript
-{
-  "id": "ssh",
-  "hostgroup_name": "linux",
-  "activate_check_in_environment": "staging",
-  "command_line": "$USER1$/check_ssh $HOSTADDRESS$"
-}
-```
-
-### Service Groups
-Create a nagios\_servicegroups data bag that will contain definitions for service groups. Each server group will be named based on the id of the data bag.
-
-```javascript
-{
-  "id": "ops",
-  "alias": "Ops",
-  "notes": "Services for ops"
-}
-```
-
-You can group your services by using the "servicegroups" keyword in your services data bags. For example, to have your ssh checks show up under the ops service group, you could define it like this:
-
-```javascript
-{
-  "id": "ssh",
-  "hostgroup_name": "all",
-  "command_line": "$USER1$/check_ssh $HOSTADDRESS$",
-  "servicegroups": "ops"
-}
-```
-
-### Service Dependencies
-Create a nagios\_servicedependencies data bag that will contain definitions for service dependencies. Each service dependency will be named based on the id of the data bag. Each service dependency requires a dependent host name and/or hostgroup name, dependent service description, host name and/or hostgroup name, and service description.
-
-```javascript
-{
-  "id": "Service_X_depends_on_Service_Y",
-  "dependent_host_name": "ServerX",
-  "dependent_service_description": "Service X",
-  "host_name": "ServerY",
-  "service_description": "Service Y",
-  "notification_failure_criteria": "u, c"
-}
-```
-
-Additional directives can be defined as described in the [Nagios documentation](http://nagios.sourceforge.net/docs/3_0/objectdefinitions.html#servicedependency).
-
-### Time Periods
-Create a data bag for time periods, nagios_timeperiods by default, for timeperiod defintions.  Time periods are named based on the id of the data bag, and the id and alias are required.
-
-Here is an example timeperiod definition:
-
-```javascript
-{
-  "id": "time_period_name",
-  "alias": "This time period goes from now to then",
-  "times": [
-    "sunday 09:00-17:00",
-    "monday 09:00-17:00",
-    "tuesday 09:00-17:00",
-    "wednesday 09:00-17:00",
-    "thursday 09:00-17:00",
-    "friday 09:00-17:00",
-    "saturday 09:00-17:00"
-  ]
-}
-```
-
-Additional information on defining time periods can be found in the [Nagios Documentation](http://nagios.sourceforge.net/docs/3_0/objectdefinitions.html#timeperiod).
-
-### Host Templates
-Host templates are optional, but allow you to specify combinations of attributes to apply to a host. Create a nagios_hosttemplates\ data bag that will contain definitions for host templates to be used. Each host template need only specify id and whichever parameters you want to override.
-
-Here's an example of a template that reduces the check frequency to once per day and changes the retry interval to 1 hour.
-
-```javascript
-{
-  "id": "windows-host",
-  "check_command": "check-host-alive-windows"
-}
-```
-
-You then use the host template by setting the `node['nagios']['host_template']` attribute for a node. You could apply this with a role as follows:
-
-```ruby
-role 'windows'
-
-default_attributes(
-  nagios: {
-    host_template: 'windows-host'
-  }
-)
-```
-
-Additional directives can be defined as described in the Nagios documentation for [Host Definitions](http://nagios.sourceforge.net/docs/3_0/objectdefinitions.html#host).
-
-### Templates
-Templates are optional, but allow you to specify combinations of attributes to apply to a service. Create a nagios_templates\ data bag that will contain definitions for templates to be used. Each template need only specify id and whichever parameters you want to override.
-
-Here's an example of a template that reduces the check frequency to once per day and changes the retry interval to 1 hour.
-
-```javascript
-{
-  "id": "dailychecks",
-  "check_interval": "86400",
-  "retry_interval": "3600"
-}
-```
-
-You then use the template in your service data bag as follows:
-
-```javascript
-{
-  "id": "expensive_service_check",
-  "hostgroup_name": "linux",
-  "command_line": "$USER1$/check_example $HOSTADDRESS$",
-  "service_template": "dailychecks"
-}
-```
-
-### Search Defined Hostgroups
-Create a nagios\_hostgroups data bag that will contain definitions for Nagios hostgroups populated via search. These data bags include a Chef node search query that will populate the Nagios hostgroup with nodes based on the search.
-
-Here's an example to find all HP hardware systems for an "hp_systems" hostgroup:
-
-```javascript
-{
-  "search_query": "dmi_system_manufacturer:HP",
-  "hostgroup_name": "hp_systems",
-  "id": "hp_systems"
-}
-```
-
-### Monitoring Systems Not In Chef
-Create a nagios\_unmanagedhosts data bag that will contain definitions for hosts not in Chef that you would like to manage. "hostgroups" can be an existing Chef role (every Chef role gets a Nagios hostgroup) or a new hostgroup. Note that "hostgroups" must be an array of hostgroups even if it contains just a single hostgroup.
-
-Here's an example host definition:
-
-```javascript
-{
-  "address": "webserver1.mydmz.dmz",
-  "hostgroups": ["web_servers","production_servers"],
-  "id": "webserver1",
-  "notifications": 1
-}
-```
-
-Similar to services, you may also filter unmanaged hosts by environment. This is useful if you have nagios servers in several environments but you would like to monitor an unmanaged host that only exists in a particular environment:
-
-```javascript
-{
-  "address": "webserver1.mydmz.dmz",
-  "hostgroups": ["web_servers","production_servers"],
-  "id": "webserver1",
-  "environment": "production",
-  "notifications": 1
-}
-```
-
-### Service Escalations
-You can optionally define service escalations for the data bag defined services. Doing so involves two steps - creating the `nagios_serviceescalations` data bag and invoking it from the service. For example, to create an escalation to page managers on a 15 minute period after the 3rd page:
-
-```javascript
-{
-  "id": "15-minute-escalation",
-  "contact_groups": "managers",
-  "first_notification": "3",
-  "last_notification": "0",
-  "escalation_period": "24x7",
-  "notification_interval": "900"
-}
-```
-
-Then, in the service data bag,
-
-```javascript
-{
-  "id": "my-service",
-  // ...
-  "use_escalation": "15-minute-escalation"
-}
-```
-
-You can also define escalations using wildcards, like so:
-
-```javascript
-{
-  "id": "first-warning",
-  "contact_groups": "sysadmin",
-  "hostgroup_name": "*",
-  "first_notification": "1",
-  "last_notification": "0",
-  "notification_interval": "21600",
-  "escalation_period": "24x7",
-  "escalation_options": "w",
-  "hostgroup_name": "*",
-  "service_description": "*",
-  "register": 1
-}
-```
-
-This configures notifications for all warnings to repeat on a given interval (under the default config, every 6 hours). (Note that you must register this kind of escalation, as it is not a template.)
-
-### Event Handlers
-You can optionally define event handlers to trigger on service alerts by creating a nagios\_eventhandlers data bag that will contain definitions of event handlers for services monitored via Nagios.
-
-This example event handler data bags restarts chef-client. Note: This assumes you have already defined a NRPE job restart\_chef-client on the host where this command will run. You can use the NRPE LWRP to add commands to your local NRPE configs from within your cookbooks.
-
-```javascript
-{
-  "command_line": "$USER1$/check_nrpe -H $HOSTADDRESS$ -t 45 -c restart_chef-client",
-  "id": "restart_chef-client"
-}
-```
-
-Once you've defined an event handler you will need to add the event handler to a service definition in order to trigger the action. See the example service definition below.
-
-```javascript
-{
-  "command_line": "$USER1$/check_nrpe -H $HOSTADDRESS$ -t 45 -c check_chef_client",
-  "hostgroup_name": "linux",
-  "id": "chef-client",
-  "event_handler": "restart_chef-client"
-}
-```
+[See Wiki for more databag information](https://github.com/schubergphilis/nagios/wiki/config)
 
 ### Pager Duty
 You can define pagerduty contacts and keys by creating nagios\_pagerduty data bags that contain the contact and
@@ -517,7 +211,7 @@ You can add these contacts to any contactgroups you create.
 
 Monitoring Role
 ---------------
-Create a role to use for the monitoring server. The role name should match the value of the attribute "`node['nagios']['server_role']`". By default, this is '`monitoring`'. For example:
+Create a role to use for the monitoring server. The role name should match the value of the attribute "`node['nrpe']['server_role']`" on your clients. By default, this is '`monitoring`'. For example:
 
 ```ruby
 # roles/monitoring.rb
@@ -594,10 +288,10 @@ $ knife role from file monitoring.rb
 License & Authors
 -----------------
 - Author:: Joshua Sierles <joshua@37signals.com>
-- Author:: Nathan Haneysmith <nathan@getchef.com>
-- Author:: Joshua Timberman <joshua@getchef.com>
-- Author:: Seth Chisamore <schisamo@getchef.com>
-- Author:: Tim Smith <tsmith@limelight.com>
+- Author:: Nathan Haneysmith <nathan@chef.io>
+- Author:: Joshua Timberman <joshua@chef.io>
+- Author:: Seth Chisamore <schisamo@chef.io>
+- Author:: Tim Smith <tim@cozy.co>
 
 ```text
 Copyright 2009, 37signals

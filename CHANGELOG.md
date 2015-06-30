@@ -1,9 +1,157 @@
 nagios Cookbook CHANGELOG
 =========================
 This file is used to list changes made in each version of the nagios cookbook.
+7.1.4
+-----
+### Bug
+- AuthzLDAPAuthoritative is removed in Apache 2.4.
+- Fixed the pagerduty config by using LWRP.
 
-v6.0.0 - CURRENTLY UNRELEASED
------------------------------
+### Improvement
+- Made test config os (in)dependent.
+- Added zap for config file cleanup.
+- Added encrypted user databag support. 
+- Added extra configuration tests.
+- Added gitter badge.
+
+7.1.2
+-----
+### Bug
+- Fixed display of style sheets on Ubuntu 14.04+
+- service_check_timeout_state config option is now only set on modern Nagios releases.  This broke Ubuntu 10.04/12.04 service startup
+- Updated Test Kitchen release / added additional platforms for testing
+- Fixed the attribute used to enable notifications in the Readme file
+- Fixed loading of node['nagios']['host_name_attribute']
+
+### Improvement
+- Search queries in hostgroups data bag are now limited to the monitored environments if using node['nagios']['monitored_environments']
+
+7.1.0
+-----
+### Bug
+- Fixed class-type checking with duck-typing on update_options.
+- Fixed host_name_attribute on nagios model.
+
+### Improvement
+- Moved all nagios configuration options within attributes.
+- Moved all nagios configuration attributes into separate file.
+
+### Breaking Changes
+- With the change above we might introduced some config problems.
+  Please check your attributes when upgrading.
+
+### Development
+- Added extra kitchen serverspec tests.
+
+7.0.8
+-----
+### Bug
+- Fixed servicegroups members.
+- Chaned the order of data bag loading (commands first).
+
+### Improvement
+- Cleanup of the internals of the nagios model.
+
+### Development
+- Added kitchen serverspec tests.
+
+7.0.6
+-----
+### Bug
+- Fixed data bag import.(#346)
+- Fixed missing create method on Servicegroup object. (#348)
+- Fixed update_dependency_members for depedency objects.
+
+7.0.4
+-----
+### Bug
+- Fixed the order for resource.cfg population to be correct.
+
+7.0.2
+-----
+### Bug
+- Fixed the hardcoded cgi-bin path in server source.
+- Fixed contact_groups within load_default_config recipe.
+- Removed dead code from timeperiod.rb library.
+- Ignore timeperiods that don't comply.
+- Making time formats less restrictive. (#336)
+
+### Improvement
+- Make yum-epel recipe include optional via attribute.
+- Only allow_empty_hostgroup_assignment for Nagios versions >= 3.4.0
+
+7.0.0
+-----
+### Feature
+- Added providers for all nagios configuration objects.
+- Added wiki pages explaining the providers.
+- Added wiki pages explaining the databags.
+
+### Development
+- Updated chefspec (4.2.0)
+
+### Extra note
+- Please test this version before using it in production. Some logic and attributes have changes, so this might break your current setup.
+
+6.1.2
+----------
+### Feature
+- Allow defining parents in the unmanaged hosts data bag so you can build the host map.
+
+### Bug
+- Setup Apache2 before trying to configure the webserver so paths will be created
+- Installed EPEL on RHEL so package installs work
+- Set the Apache log dir to that provided by Apache since the Nagios log dir is now locked down to just the nagios user / group
+- Template the resource.cfg file on RHEL platforms to prevent check failures
+- Fix cgi-bin page loads on RHEL systems
+- Fix CSS files not loading on Debian based systems
+
+### Development
+- Updated Test Kitchen dependency to 1.3.1 from 1.2.1
+
+6.1.0
+-----
+
+### Bug
+- Fix missing CSS files on RHEL/Fedora package installs
+- Ensure the source file for Nagios is always downloaded to work around corrupt partial downloads
+- Fixed permissions being changed on the resource directory during each run on RHEL systems
+
+### Improvement
+- Remove support for SSL V2 / V3 (Apache2/NGINX) and add TLS 1.1 and 1.2 (NGINX)
+- Cleaned up and removed duplicate code from the web server configuration
+
+### New Features
+- Added the ability to tag nodes with an attribute that excludes them from the monitoring search.  See readme for details
+
+### Breaking Changes
+- The /nagios or /nagios3 URLs are no longer valid.  Nagios should be installed on the root of the webserver and this never entirely worked
+
+### Development
+- Updated Rubocop rules
+- Fixed specs to run with Chefspec 4.X
+
+v6.0.4
+------
+### Bug
+- Fix normalized hostnames not normalizing the hostgroups
+- Don't register the service templates so that Nagios will start properly
+- Require Apache2 cookbook version 2.0 or greater due to breaking changes with how site.conf files are handled
+
+### Improvement
+- Added additional options for perfdata
+
+### New Feature
+- Added the ability to specify a URL to download patches that will be applied to the source install prior to compliation
+
+
+v6.0.2
+------
+### Bug
+- Remove .DS_Store files in the supermarket file that caused failures on older versions of Berkshelf
+
+v6.0.0
+------
 ### Breaking changes
 - NRPE is no longer installed by the nagios cookbook.  This is handled by the NRPE cookbook.  Moving this logic allows for more fined grained control of how the two services are installed and configured
 - Previously the Nagios server was monitored out of the box using a NRPE check.  This is no longer the case since the cookbooks are split.  You'll need to add a services data bag to return this functionality
@@ -21,15 +169,25 @@ v6.0.0 - CURRENTLY UNRELEASED
 - Properly set the path for the p1.pl file on RHEL platforms
 - Ensure that the hostgroups array doesn't include duplicates in the even that an environment and role have the same name
 - Only template nagios.cfg once
+- Fix ocsp-command typo in nagios.cfg
+- Fix bug that prevented Apache2 recipe from completing
 
 ### Improvement
 - Readme cleanup
 - Created a new users_helper library to abstract much of the Ruby logic for building user lists out of the recipe
 - Avoid writing out empty comments in templates for data bag driven configs
+- Add a full chefignore file to help with Berkshelf
+- Better documented host_perfdata_command and service_perfdata_command in the README
+- Add possibility to configure default_service with options process_perf_data & action_url
+- Add possibility to configure default_host with options process_perf_data & action_url
+- Allow freshness_threshold and active_checks_enabled to be specified in templates
+- Added a generic service-template w/min req. params
 
 ### New Feature
 - New attribute node['nagios']['monitored_environments'] for specifying multiple environments you'd like to monitor
 - Allow using the exclusion hostgroup format used by Nagios when defining the hostgroup for a check
+- Host templates can now be defined via a new host_templates data bag.
+
 
 ### Development
 - Vagrantfile updated for Vagrant 1.5 format changes
@@ -45,7 +203,7 @@ v6.0.0 - CURRENTLY UNRELEASED
 v5.3.4
 ------
 ### Bug
-- Fixed two bugs that prevented Apache/NGINX web server setups from configuring correctly 
+- Fixed two bugs that prevented Apache/NGINX web server setups from configuring correctly
 
 v5.3.2
 ------
@@ -117,7 +275,7 @@ v5.1.0
 - **[COOK-3781](https://tickets.opscode.com/browse/COOK-3781)** Service escalations can now be written using wildcards.  See the readme for an example of this feature.
 - **[COOK-3702](https://tickets.opscode.com/browse/COOK-3702)** Multiple PagerDuty keys for different contacts can be defined via a new nagios_pagerduty data bag.  See the readme for more information on the new data bag and attributes for this feature.
 - **[COOK-3774](https://tickets.opscode.com/browse/COOK-3774)**Services can be limited to run on nagios servers in specific chef environments by adding a new "activate_check_in_environment" key to the services data bag.  See the Services section of the readme for an example.
-- **[CHEF-4702](https://tickets.opscode.com/browse/CHEF-4702)** Chef solo users can now user solo-search for data bag searchd (https://github.com/edelight/chef-solo-search) 
+- **[CHEF-4702](https://tickets.opscode.com/browse/CHEF-4702)** Chef solo users can now user solo-search for data bag searchd (https://github.com/edelight/chef-solo-search)
 
 v5.0.2
 ------

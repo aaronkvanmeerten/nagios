@@ -4,12 +4,15 @@ maintainer_email  'tsmith84@gmail.com'
 license           'Apache 2.0'
 description       'Installs and configures Nagios server'
 long_description  IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version           '5.3.13'
+version           '7.1.5'
 
-recipe 'nagios', 'Includes the server recipe.'
+recipe 'default', 'Installs Nagios server.'
 recipe 'nagios::pagerduty', 'Integrates contacts w/ PagerDuty API'
 
-%w( apache2 build-essential php nginx nginx_simplecgi yum-epel nrpe ).each do |cb|
+depends 'apache2', '>= 2.0'
+depends 'zap', '>= 0.6.0'
+
+%w( build-essential php nginx nginx_simplecgi yum-epel nrpe ).each do |cb|
   depends cb
 end
 
